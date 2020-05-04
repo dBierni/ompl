@@ -156,7 +156,7 @@ int main(int argc, char **)
     boost::filesystem::path path(TEST_RESOURCES_DIR);
     Plane2DEnvironment env((path / "ppm" / "floor.ppm").string().c_str(), argc==1);
 
-    for (unsigned int i = 0; i < 100; ++i)
+    for (unsigned int i = 0; i < 2; ++i)
         env.plan();
 
     return 0;

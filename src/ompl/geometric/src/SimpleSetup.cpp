@@ -53,8 +53,9 @@ ompl::geometric::SimpleSetup::SimpleSetup(const base::StateSpacePtr &space)
 
 void ompl::geometric::SimpleSetup::setup()
 {
-    if (!configured_ || !si_->isSetup() || !planner_->isSetup())
+    if (!configured_ || !si_->isSetup() || !planner_->isSetup() || experience_planner_->isSetup())
     {
+        OMPL_WARN("HOW MANY TIMES I AM HERE?");
         if (!si_->isSetup())
             si_->setup();
         if (!planner_)
@@ -68,8 +69,13 @@ void ompl::geometric::SimpleSetup::setup()
             }
         }
         planner_->setProblemDefinition(pdef_);
-        if (!planner_->isSetup())
+        if (!planner_->isSetup()){
             planner_->setup();
+        }
+        experience_planner_->setProblemDefinition(pdef_);
+        if (!experience_planner_->isSetup()){
+            experience_planner_->setup();
+        }
         configured_ = true;
     }
 }
@@ -80,6 +86,9 @@ void ompl::geometric::SimpleSetup::clear()
         planner_->clear();
     if (pdef_)
         pdef_->clearSolutionPaths();
+
+    if (experience_planner_)
+        experience_planner_->clear();
 }
 
 void ompl::geometric::SimpleSetup::setStartAndGoalStates(const base::ScopedState<> &start,
@@ -116,6 +125,7 @@ void ompl::geometric::SimpleSetup::setGoal(const base::GoalPtr &goal)
 ompl::base::PlannerStatus ompl::geometric::SimpleSetup::solve(double time)
 {
     setup();
+
     lastStatus_ = base::PlannerStatus::UNKNOWN;
     time::point start = time::now();
     lastStatus_ = planner_->solve(time);
@@ -227,6 +237,11 @@ void ompl::geometric::SimpleSetup::print(std::ostream &out) const
     {
         planner_->printProperties(out);
         planner_->printSettings(out);
+    }
+    if (experience_planner_)
+    {
+        experience_planner_->printProperties(out);
+        experience_planner_->printSettings(out);
     }
     if (pdef_)
         pdef_->print(out);

@@ -45,7 +45,10 @@
 #include "ompl/geometric/PathSimplifier.h"
 #include "ompl/util/Console.h"
 #include "ompl/util/Exception.h"
+/* Damian B*/
+#include <ompl/util/Deprecation.h>
 
+#include <ompl/geometric/planners/experience/ThunderRetrieveRepair.h>
 namespace ompl
 {
     namespace geometric
@@ -110,6 +113,12 @@ namespace ompl
             const base::PlannerPtr &getPlanner() const
             {
                 return planner_;
+            }
+            /** \brief Get the current experience planner */
+            /*Damian Biernat */
+            const base::PlannerPtr &getExperiencePlanner() const
+            {
+                return experience_planner_;
             }
 
             /** \brief Get the planner allocator */
@@ -209,6 +218,12 @@ namespace ompl
                 needed if setStartAndGoalStates() has been called. */
             void setGoal(const base::GoalPtr &goal);
 
+            /* Added by Damian B */
+            template< typename T>
+            void setExperiencePlanner(T experienceDB_ )
+            {
+                experience_planner_ =  std::make_shared<geometric::ThunderRetrieveRepair>(si_, experienceDB_);
+            }
             /** \brief Set the planner to use. If the planner is not
                 set, an attempt is made to use the planner
                 allocator. If no planner allocator is available
@@ -287,11 +302,15 @@ namespace ompl
             /// The maintained planner instance
             base::PlannerPtr planner_;
 
+            /// The experience based planner
+            base::PlannerPtr experience_planner_;
+
             /// The optional planner allocator
             base::PlannerAllocator pa_;
 
             /// The instance of the path simplifier
             PathSimplifierPtr psk_;
+
 
             /// Flag indicating whether the classes needed for planning are set up
             bool configured_;

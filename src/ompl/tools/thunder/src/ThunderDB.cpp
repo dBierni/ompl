@@ -106,6 +106,13 @@ bool ompl::tools::ThunderDB::load(const std::string &fileName)
 
     // Note: the StateStorage class checks if the states match for us
     plannerDataStorage_.load(iStream, *plannerData.get());
+    plannerData->printGraphviz();
+
+    for (std::size_t i = 0; i < plannerData->numVertices(); ++i)
+    {
+        OMPL_INFORM("Vertex %d:", i);
+        debugVertex(plannerData->getVertex(i));
+    }
 
     OMPL_INFORM("ThunderDB: Loaded planner data with \n  %d vertices\n  %d edges\n  %d start states\n  %d goal states",
                 plannerData->numVertices(), plannerData->numEdges(), plannerData->numStartVertices(),

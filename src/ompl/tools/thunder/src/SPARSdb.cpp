@@ -465,7 +465,11 @@ bool ompl::geometric::SPARSdb::constructSolution(const Vertex start, const Verte
             for (v = goal; v != vertexPredecessors[v]; v = vertexPredecessors[v])
             {
                 vertexPath.push_back(v);
+                std::cout <<"Solution Vertex: " <<  v << std::endl;
+
+
             }
+
             if (v != goal)  // TODO explain this because i don't understand
             {
                 vertexPath.push_back(v);
@@ -1636,6 +1640,7 @@ void ompl::geometric::SPARSdb::connectGuards(Vertex v, Vertex vp)
 
     // Create the new edge
     Edge e = (boost::add_edge(v, vp, g_)).first;
+    std::cout <<"edge: " <<  e << std::endl;
 
     // Add associated properties to the edge
     edgeWeightProperty_[e] = distanceFunction(v, vp);  // TODO: use this value with astar

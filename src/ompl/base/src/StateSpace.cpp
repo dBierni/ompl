@@ -789,6 +789,7 @@ bool ompl::base::StateSpace::hasSymmetricInterpolate() const
 
 void ompl::base::StateSpace::setStateSamplerAllocator(const StateSamplerAllocator &ssa)
 {
+    OMPL_ERROR("OMPL !!!!!!!!!!! setStateSamplerAllocator");
     ssa_ = ssa;
 }
 
@@ -1117,6 +1118,7 @@ void ompl::base::CompoundStateSpace::interpolate(const State *from, const State 
 
 ompl::base::StateSamplerPtr ompl::base::CompoundStateSpace::allocDefaultStateSampler() const
 {
+    OMPL_WARN("CompoundStateSpace::allocDefaultStateSampler");
     auto ss(std::make_shared<CompoundStateSampler>(this));
     if (weightSum_ < std::numeric_limits<double>::epsilon())
         for (unsigned int i = 0; i < componentCount_; ++i)

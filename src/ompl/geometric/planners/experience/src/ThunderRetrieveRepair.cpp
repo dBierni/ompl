@@ -125,6 +125,7 @@ namespace ompl
 
         base::PlannerStatus ThunderRetrieveRepair::solve(const base::PlannerTerminationCondition &ptc)
         {
+            OMPL_WARN("Starting solving in ThunderRetrieveRepair");
             bool solved = false;
             double approxdif = std::numeric_limits<double>::infinity();
             nearestPaths_.clear();
@@ -183,7 +184,9 @@ namespace ompl
 
             pdef_->addSolutionPath(candidateSolution.path_, approximate, approxdif, getName());
             solved = true;
-            return {solved, approximate};
+            OMPL_WARN("Finishing solving in ThunderRetrieveRepair");
+
+            return base::PlannerStatus::EXACT_SOLUTION;
         }
 
         bool ThunderRetrieveRepair::repairPath(const base::PlannerTerminationCondition &ptc, PathGeometric &primaryPath)

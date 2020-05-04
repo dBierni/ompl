@@ -189,7 +189,38 @@ namespace ompl
 
         /** \brief Definition of a function that can allocate a state sampler */
         using StateSamplerAllocator = std::function<StateSamplerPtr(const StateSpace *)>;
+
+//        class QuasiRandomStateSampler : public StateSampler
+//        {
+//        public:
+//            /** \brief Constructor */
+//            QuasiRandomStateSampler(const StateSpace *space) : StateSampler(space), samplerCount_(0), seed_(0)
+//            {
+//            }
+//
+//            /** \brief Destructor. This frees the added samplers as well. */
+//            ~QuasiRandomStateSampler() override = default;
+//
+//            void sampleNiederreiter2(ompl::base::State* state) override;
+//
+//            void sampleSobol(ompl::base::State* state) override;
+//
+//            void sampleFaure(ompl::base::State* state) override;
+//
+//            void setSeed(uint32_t &seed){
+//                seed_ = seed;
+//            }
+//
+//        protected:
+//            /** \brief The samplers that are composed */
+//            uint32_t seed_;
+//
+//        private:
+//            /** \brief The number of samplers that are composed */
+//            unsigned int samplerCount_;
+//        };
     }
+
 }
 
 #endif
