@@ -56,18 +56,6 @@ CMAKE_BINARY_DIR = /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target install/strip
-install/strip: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip
-
-# Special rule for the target install/strip
-install/strip/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip/fast
-
 # Special rule for the target install/local
 install/local: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
@@ -92,26 +80,16 @@ install/fast: preinstall/fast
 	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cmake -P cmake_install.cmake
 .PHONY : install/fast
 
-# Special rule for the target list_install_components
-list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\" \"ompl\""
-.PHONY : list_install_components
+# Special rule for the target package_source
+package_source:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
+	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cpack --config ./CPackSourceConfig.cmake /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CPackSourceConfig.cmake
+.PHONY : package_source
 
-# Special rule for the target list_install_components
-list_install_components/fast: list_install_components
+# Special rule for the target package_source
+package_source/fast: package_source
 
-.PHONY : list_install_components/fast
-
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
+.PHONY : package_source/fast
 
 # Special rule for the target edit_cache
 edit_cache:
@@ -123,17 +101,6 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
-
-# Special rule for the target package_source
-package_source:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cpack --config ./CPackSourceConfig.cmake /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CPackSourceConfig.cmake
-.PHONY : package_source
-
-# Special rule for the target package_source
-package_source/fast: package_source
-
-.PHONY : package_source/fast
 
 # Special rule for the target package
 package: preinstall
@@ -156,6 +123,39 @@ test:
 test/fast: test
 
 .PHONY : test/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
+
+# Special rule for the target install/strip
+install/strip: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
+	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip
+
+# Special rule for the target install/strip
+install/strip/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
+	/home/db/Programs/CLion-2020.1/clion-2020.1/bin/cmake/linux/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip/fast
+
+# Special rule for the target list_install_components
+list_install_components:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\" \"ompl\""
+.PHONY : list_install_components
+
+# Special rule for the target list_install_components
+list_install_components/fast: list_install_components
+
+.PHONY : list_install_components/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -190,6 +190,32 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named docker-ompl
+
+# Build rule for target.
+docker-ompl: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 docker-ompl
+.PHONY : docker-ompl
+
+# fast build rule for target.
+docker-ompl/fast:
+	$(MAKE) -f CMakeFiles/docker-ompl.dir/build.make CMakeFiles/docker-ompl.dir/build
+.PHONY : docker-ompl/fast
+
+#=============================================================================
+# Target rules for targets named docker-plannerarena
+
+# Build rule for target.
+docker-plannerarena: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 docker-plannerarena
+.PHONY : docker-plannerarena
+
+# fast build rule for target.
+docker-plannerarena/fast:
+	$(MAKE) -f CMakeFiles/docker-plannerarena.dir/build.make CMakeFiles/docker-plannerarena.dir/build
+.PHONY : docker-plannerarena/fast
+
+#=============================================================================
 # Target rules for targets named uninstall
 
 # Build rule for target.
@@ -201,6 +227,19 @@ uninstall: cmake_check_build_system
 uninstall/fast:
 	$(MAKE) -f CMakeFiles/uninstall.dir/build.make CMakeFiles/uninstall.dir/build
 .PHONY : uninstall/fast
+
+#=============================================================================
+# Target rules for targets named docker
+
+# Build rule for target.
+docker: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 docker
+.PHONY : docker
+
+# fast build rule for target.
+docker/fast:
+	$(MAKE) -f CMakeFiles/docker.dir/build.make CMakeFiles/docker.dir/build
+.PHONY : docker/fast
 
 #=============================================================================
 # Target rules for targets named ompl
@@ -923,16 +962,19 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... install/strip"
 	@echo "... install/local"
 	@echo "... install"
-	@echo "... list_install_components"
-	@echo "... rebuild_cache"
-	@echo "... edit_cache"
-	@echo "... uninstall"
+	@echo "... docker-ompl"
+	@echo "... docker-plannerarena"
 	@echo "... package_source"
+	@echo "... uninstall"
+	@echo "... docker"
+	@echo "... edit_cache"
 	@echo "... package"
 	@echo "... test"
+	@echo "... rebuild_cache"
+	@echo "... install/strip"
+	@echo "... list_install_components"
 	@echo "... ompl"
 	@echo "... clean_bindings"
 	@echo "... py_ompl"

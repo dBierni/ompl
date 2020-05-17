@@ -71,6 +71,10 @@ namespace ompl
             base::PlannerStatus solve(const base::PlannerTerminationCondition &ptc) override;
 
             void clear() override;
+            void checkForNewMotion(const base::PlannerTerminationCondition &ptc);
+            void generateTree(const base::PlannerTerminationCondition &ptc);
+
+
 
             /** \brief Return true if the intermediate states generated along motions are to be added to the tree itself
              */
@@ -116,6 +120,8 @@ namespace ompl
 
             void setup() override;
 
+            double calculateUnitBallVolume(int dim);
+
         protected:
             /** \brief Representation of a motion */
             class Motion
@@ -143,6 +149,9 @@ namespace ompl
                 base::State *xstate;
                 Motion *xmotion;
                 bool start;
+                bool rejected{false};
+                unsigned int sampleCount{0};
+                double quasiR{0};
             };
 
             /** \brief The state of the tree after an attempt to extend it */
@@ -153,7 +162,9 @@ namespace ompl
                 /// progress has been made towards the randomly sampled state
                 ADVANCED,
                 /// the randomly sampled state was reached
-                REACHED
+                REACHED,
+
+                REJECTED
             };
 
             /** \brief Free the memory allocated by this planner */
@@ -176,6 +187,9 @@ namespace ompl
 
             /** \brief The goal tree */
             TreeData tGoal_;
+
+            std::vector<Motion*> *rejected_motions_;
+//            std::vector<Motion> *additional_motions_;
 
             /** \brief The maximum length of a motion to be added to a tree */
             double maxDistance_{0.};

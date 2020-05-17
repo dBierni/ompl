@@ -381,6 +381,7 @@ void ompl::geometric::PRM::checkForSolution(const base::PlannerTerminationCondit
     auto *goal = static_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
     while (!ptc && !addedNewSolution_)
     {
+        OMPL_WARN("checkForSolution");
         // Check for any new goal states
         if (goal->maxSampleCount() > goalM_.size())
         {
@@ -543,6 +544,8 @@ void ompl::geometric::PRM::constructRoadmap(const base::PlannerTerminationCondit
     bestCost_ = opt_->infiniteCost();
     while (!ptc())
     {
+        OMPL_ERROR("constructRoadmap");
+
         // maintain a 2:1 ratio for growing/expansion of roadmap
         // call growRoadmap() twice as long for every call of expandRoadmap()
         if (grow)

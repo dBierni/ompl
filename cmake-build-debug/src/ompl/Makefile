@@ -3525,6 +3525,33 @@ geometric/planners/rrt/src/LazyRRT.cpp.s:
 	cd /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug && $(MAKE) -f src/ompl/CMakeFiles/ompl.dir/build.make src/ompl/CMakeFiles/ompl.dir/geometric/planners/rrt/src/LazyRRT.cpp.s
 .PHONY : geometric/planners/rrt/src/LazyRRT.cpp.s
 
+geometric/planners/rrt/src/NewPlanner.o: geometric/planners/rrt/src/NewPlanner.cpp.o
+
+.PHONY : geometric/planners/rrt/src/NewPlanner.o
+
+# target to build an object file
+geometric/planners/rrt/src/NewPlanner.cpp.o:
+	cd /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug && $(MAKE) -f src/ompl/CMakeFiles/ompl.dir/build.make src/ompl/CMakeFiles/ompl.dir/geometric/planners/rrt/src/NewPlanner.cpp.o
+.PHONY : geometric/planners/rrt/src/NewPlanner.cpp.o
+
+geometric/planners/rrt/src/NewPlanner.i: geometric/planners/rrt/src/NewPlanner.cpp.i
+
+.PHONY : geometric/planners/rrt/src/NewPlanner.i
+
+# target to preprocess a source file
+geometric/planners/rrt/src/NewPlanner.cpp.i:
+	cd /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug && $(MAKE) -f src/ompl/CMakeFiles/ompl.dir/build.make src/ompl/CMakeFiles/ompl.dir/geometric/planners/rrt/src/NewPlanner.cpp.i
+.PHONY : geometric/planners/rrt/src/NewPlanner.cpp.i
+
+geometric/planners/rrt/src/NewPlanner.s: geometric/planners/rrt/src/NewPlanner.cpp.s
+
+.PHONY : geometric/planners/rrt/src/NewPlanner.s
+
+# target to generate assembly for a file
+geometric/planners/rrt/src/NewPlanner.cpp.s:
+	cd /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug && $(MAKE) -f src/ompl/CMakeFiles/ompl.dir/build.make src/ompl/CMakeFiles/ompl.dir/geometric/planners/rrt/src/NewPlanner.cpp.s
+.PHONY : geometric/planners/rrt/src/NewPlanner.cpp.s
+
 geometric/planners/rrt/src/RRT.o: geometric/planners/rrt/src/RRT.cpp.o
 
 .PHONY : geometric/planners/rrt/src/RRT.o
@@ -4990,6 +5017,9 @@ help:
 	@echo "... geometric/planners/rrt/src/LazyRRT.o"
 	@echo "... geometric/planners/rrt/src/LazyRRT.i"
 	@echo "... geometric/planners/rrt/src/LazyRRT.s"
+	@echo "... geometric/planners/rrt/src/NewPlanner.o"
+	@echo "... geometric/planners/rrt/src/NewPlanner.i"
+	@echo "... geometric/planners/rrt/src/NewPlanner.s"
 	@echo "... geometric/planners/rrt/src/RRT.o"
 	@echo "... geometric/planners/rrt/src/RRT.i"
 	@echo "... geometric/planners/rrt/src/RRT.s"

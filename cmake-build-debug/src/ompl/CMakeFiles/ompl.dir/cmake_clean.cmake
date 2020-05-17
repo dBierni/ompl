@@ -126,6 +126,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/ompl.dir/geometric/planners/rrt/src/LBTRRT.cpp.o"
   "CMakeFiles/ompl.dir/geometric/planners/rrt/src/LazyLBTRRT.cpp.o"
   "CMakeFiles/ompl.dir/geometric/planners/rrt/src/LazyRRT.cpp.o"
+  "CMakeFiles/ompl.dir/geometric/planners/rrt/src/NewPlanner.cpp.o"
   "CMakeFiles/ompl.dir/geometric/planners/rrt/src/RRT.cpp.o"
   "CMakeFiles/ompl.dir/geometric/planners/rrt/src/RRTConnect.cpp.o"
   "CMakeFiles/ompl.dir/geometric/planners/rrt/src/RRTXstatic.cpp.o"

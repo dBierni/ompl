@@ -73,7 +73,10 @@ preinstall: doc/preinstall
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: CMakeFiles/docker-ompl.dir/clean
+clean: CMakeFiles/docker-plannerarena.dir/clean
 clean: CMakeFiles/uninstall.dir/clean
+clean: CMakeFiles/docker.dir/clean
 clean: src/clean
 clean: py-bindings/clean
 clean: tests/clean
@@ -329,6 +332,60 @@ tests/regression_tests/clean: tests/regression_tests/CMakeFiles/regression_test.
 .PHONY : tests/regression_tests/clean
 
 #=============================================================================
+# Target rules for target CMakeFiles/docker-ompl.dir
+
+# All Build rule for target.
+CMakeFiles/docker-ompl.dir/all:
+	$(MAKE) -f CMakeFiles/docker-ompl.dir/build.make CMakeFiles/docker-ompl.dir/depend
+	$(MAKE) -f CMakeFiles/docker-ompl.dir/build.make CMakeFiles/docker-ompl.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target docker-ompl"
+.PHONY : CMakeFiles/docker-ompl.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/docker-ompl.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/docker-ompl.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
+.PHONY : CMakeFiles/docker-ompl.dir/rule
+
+# Convenience name for target.
+docker-ompl: CMakeFiles/docker-ompl.dir/rule
+
+.PHONY : docker-ompl
+
+# clean rule for target.
+CMakeFiles/docker-ompl.dir/clean:
+	$(MAKE) -f CMakeFiles/docker-ompl.dir/build.make CMakeFiles/docker-ompl.dir/clean
+.PHONY : CMakeFiles/docker-ompl.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/docker-plannerarena.dir
+
+# All Build rule for target.
+CMakeFiles/docker-plannerarena.dir/all:
+	$(MAKE) -f CMakeFiles/docker-plannerarena.dir/build.make CMakeFiles/docker-plannerarena.dir/depend
+	$(MAKE) -f CMakeFiles/docker-plannerarena.dir/build.make CMakeFiles/docker-plannerarena.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target docker-plannerarena"
+.PHONY : CMakeFiles/docker-plannerarena.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/docker-plannerarena.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/docker-plannerarena.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
+.PHONY : CMakeFiles/docker-plannerarena.dir/rule
+
+# Convenience name for target.
+docker-plannerarena: CMakeFiles/docker-plannerarena.dir/rule
+
+.PHONY : docker-plannerarena
+
+# clean rule for target.
+CMakeFiles/docker-plannerarena.dir/clean:
+	$(MAKE) -f CMakeFiles/docker-plannerarena.dir/build.make CMakeFiles/docker-plannerarena.dir/clean
+.PHONY : CMakeFiles/docker-plannerarena.dir/clean
+
+#=============================================================================
 # Target rules for target CMakeFiles/uninstall.dir
 
 # All Build rule for target.
@@ -354,6 +411,34 @@ uninstall: CMakeFiles/uninstall.dir/rule
 CMakeFiles/uninstall.dir/clean:
 	$(MAKE) -f CMakeFiles/uninstall.dir/build.make CMakeFiles/uninstall.dir/clean
 .PHONY : CMakeFiles/uninstall.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/docker.dir
+
+# All Build rule for target.
+CMakeFiles/docker.dir/all: CMakeFiles/docker-ompl.dir/all
+CMakeFiles/docker.dir/all: CMakeFiles/docker-plannerarena.dir/all
+	$(MAKE) -f CMakeFiles/docker.dir/build.make CMakeFiles/docker.dir/depend
+	$(MAKE) -f CMakeFiles/docker.dir/build.make CMakeFiles/docker.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target docker"
+.PHONY : CMakeFiles/docker.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/docker.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/docker.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
+.PHONY : CMakeFiles/docker.dir/rule
+
+# Convenience name for target.
+docker: CMakeFiles/docker.dir/rule
+
+.PHONY : docker
+
+# clean rule for target.
+CMakeFiles/docker.dir/clean:
+	$(MAKE) -f CMakeFiles/docker.dir/build.make CMakeFiles/docker.dir/clean
+.PHONY : CMakeFiles/docker.dir/clean
 
 #=============================================================================
 # Target rules for target src/ompl/CMakeFiles/ompl.dir
@@ -1199,12 +1284,12 @@ demos/CMakeFiles/demo_VectorFieldNonconservative.dir/clean:
 demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/all: src/ompl/CMakeFiles/ompl.dir/all
 	$(MAKE) -f demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/build.make demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/depend
 	$(MAKE) -f demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/build.make demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num=12 "Built target demo_OpenDERigidBodyPlanning"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target demo_OpenDERigidBodyPlanning"
 .PHONY : demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/all
 
 # Build rule for subdir invocation for target.
 demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 60
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 59
 	$(MAKE) -f CMakeFiles/Makefile2 demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
 .PHONY : demos/CMakeFiles/demo_OpenDERigidBodyPlanning.dir/rule
@@ -1334,12 +1419,12 @@ demos/CMakeFiles/demo_VectorFieldConservative.dir/clean:
 demos/CMakeFiles/demo_Koules.dir/all: src/ompl/CMakeFiles/ompl.dir/all
 	$(MAKE) -f demos/CMakeFiles/demo_Koules.dir/build.make demos/CMakeFiles/demo_Koules.dir/depend
 	$(MAKE) -f demos/CMakeFiles/demo_Koules.dir/build.make demos/CMakeFiles/demo_Koules.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num=9,10,11 "Built target demo_Koules"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num=8,9,10,11 "Built target demo_Koules"
 .PHONY : demos/CMakeFiles/demo_Koules.dir/all
 
 # Build rule for subdir invocation for target.
 demos/CMakeFiles/demo_Koules.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 62
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 63
 	$(MAKE) -f CMakeFiles/Makefile2 demos/CMakeFiles/demo_Koules.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
 .PHONY : demos/CMakeFiles/demo_Koules.dir/rule
@@ -1415,12 +1500,12 @@ demos/CMakeFiles/demo_QuotientSpacePlanningRigidBody3D.dir/clean:
 demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/all: src/ompl/CMakeFiles/ompl.dir/all
 	$(MAKE) -f demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/build.make demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/depend
 	$(MAKE) -f demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/build.make demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target demo_RigidBodyPlanningWithIK"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num=20 "Built target demo_RigidBodyPlanningWithIK"
 .PHONY : demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/all
 
 # Build rule for subdir invocation for target.
 demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 59
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 60
 	$(MAKE) -f CMakeFiles/Makefile2 demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
 .PHONY : demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/rule
@@ -1442,12 +1527,12 @@ demos/CMakeFiles/demo_RigidBodyPlanningWithIK.dir/clean:
 demos/CMakeFiles/demo_KinematicChainBenchmark.dir/all: src/ompl/CMakeFiles/ompl.dir/all
 	$(MAKE) -f demos/CMakeFiles/demo_KinematicChainBenchmark.dir/build.make demos/CMakeFiles/demo_KinematicChainBenchmark.dir/depend
 	$(MAKE) -f demos/CMakeFiles/demo_KinematicChainBenchmark.dir/build.make demos/CMakeFiles/demo_KinematicChainBenchmark.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num=8 "Built target demo_KinematicChainBenchmark"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target demo_KinematicChainBenchmark"
 .PHONY : demos/CMakeFiles/demo_KinematicChainBenchmark.dir/all
 
 # Build rule for subdir invocation for target.
 demos/CMakeFiles/demo_KinematicChainBenchmark.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 60
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 59
 	$(MAKE) -f CMakeFiles/Makefile2 demos/CMakeFiles/demo_KinematicChainBenchmark.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
 .PHONY : demos/CMakeFiles/demo_KinematicChainBenchmark.dir/rule
@@ -1469,12 +1554,12 @@ demos/CMakeFiles/demo_KinematicChainBenchmark.dir/clean:
 demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/all: src/ompl/CMakeFiles/ompl.dir/all
 	$(MAKE) -f demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/build.make demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/depend
 	$(MAKE) -f demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/build.make demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num=20 "Built target demo_RigidBodyPlanningWithControls"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target demo_RigidBodyPlanningWithControls"
 .PHONY : demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/all
 
 # Build rule for subdir invocation for target.
 demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 60
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 59
 	$(MAKE) -f CMakeFiles/Makefile2 demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
 .PHONY : demos/CMakeFiles/demo_RigidBodyPlanningWithControls.dir/rule
@@ -1712,12 +1797,12 @@ demos/CMakeFiles/demo_ConstrainedPlanningTorus.dir/clean:
 demos/CMakeFiles/demo_OptimalPlanning.dir/all: src/ompl/CMakeFiles/ompl.dir/all
 	$(MAKE) -f demos/CMakeFiles/demo_OptimalPlanning.dir/build.make demos/CMakeFiles/demo_OptimalPlanning.dir/depend
 	$(MAKE) -f demos/CMakeFiles/demo_OptimalPlanning.dir/build.make demos/CMakeFiles/demo_OptimalPlanning.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num= "Built target demo_OptimalPlanning"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles --progress-num=12 "Built target demo_OptimalPlanning"
 .PHONY : demos/CMakeFiles/demo_OptimalPlanning.dir/all
 
 # Build rule for subdir invocation for target.
 demos/CMakeFiles/demo_OptimalPlanning.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 59
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 60
 	$(MAKE) -f CMakeFiles/Makefile2 demos/CMakeFiles/demo_OptimalPlanning.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/db/Robotics/ROS_WORKSPACE/ompl_ws/src/ompl/cmake-build-debug/CMakeFiles 0
 .PHONY : demos/CMakeFiles/demo_OptimalPlanning.dir/rule

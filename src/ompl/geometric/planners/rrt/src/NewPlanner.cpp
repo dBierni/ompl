@@ -38,9 +38,11 @@
 #include "ompl/base/goals/GoalSampleableRegion.h"
 #include "ompl/tools/config/SelfConfig.h"
 #include "ompl/util/String.h"
+#include <math.h>
+#include <thread>
 
 ompl::geometric::NewPlanner::NewPlanner(const base::SpaceInformationPtr &si, bool addIntermediateStates)
-  : base::Planner(si, addIntermediateStates ? "NewPlannerIntermediate" : "NewPlanner")
+    : base::Planner(si, addIntermediateStates ? "NewPlannerIntermediate" : "NewPlanner")
 {
     specs_.recognizedGoal = base::GOAL_SAMPLEABLE_REGION;
     specs_.directed = true;
@@ -52,6 +54,8 @@ ompl::geometric::NewPlanner::NewPlanner(const base::SpaceInformationPtr &si, boo
     connectionPoint_ = std::make_pair<base::State *, base::State *>(nullptr, nullptr);
     distanceBetweenTrees_ = std::numeric_limits<double>::infinity();
     addIntermediateStates_ = addIntermediateStates;
+    rejected_motions_ = new std::vector<Motion*>();
+//    additional_motions_ = new std::vector<Motion>();
 }
 
 ompl::geometric::NewPlanner::~NewPlanner()
@@ -64,6 +68,8 @@ void ompl::geometric::NewPlanner::setup()
     Planner::setup();
     tools::SelfConfig sc(si_, getName());
     sc.configurePlannerRange(maxDistance_);
+    if(!rejected_motions_)
+        rejected_motions_ = new std::vector<Motion*>();
 
     if (!tStart_)
         tStart_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion *>(this));
@@ -98,6 +104,10 @@ void ompl::geometric::NewPlanner::freeMemory()
             delete motion;
         }
     }
+//    if (rejected_states_)
+//        delete [] rejected_states_;
+//    if (additional_motions_)
+//        delete [] additional_motions_;
 }
 
 void ompl::geometric::NewPlanner::clear()
@@ -117,13 +127,40 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
                                                                              Motion *rmotion)
 {
     /* find closest state in the tree */
-    Motion *nmotion = tree->nearest(rmotion);
+//    Motion *nmotion = tree->nearest(rmotion);
+    std::vector<Motion*> nearestMotions; // = new std::vector<Motion*>();
+    tree->nearestR(rmotion, tgi.quasiR, nearestMotions);
+    base::State *dstate = rmotion->state;
 
+    bool validState = si_->isValid(dstate);
+    OMPL_WARN("TU");
+    if (nearestMotions.empty())
+    {
+        if (validState)
+        {
+            if (!tgi.rejected)
+            {
+                OMPL_INFORM("start REJECTED");
+                tgi.rejected = true;
+            }
+            else
+            {
+                OMPL_INFORM("REJECTED");
+
+                auto *rejectedMotion = new Motion(si_);
+                si_->copyState(rejectedMotion->state, dstate);
+                rejected_motions_->push_back(rejectedMotion);
+            }
+        }
+        return REJECTED;
+    }
+
+    Motion *nmotion = *(nearestMotions.begin());
+    std::cout <<"size: " << nearestMotions.size();
     /* assume we can reach the state we go towards */
     bool reach = true;
 
     /* find state to add */
-    base::State *dstate = rmotion->state;
     double d = si_->distance(nmotion->state, rmotion->state);
     if (d > maxDistance_)
     {
@@ -138,9 +175,10 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
         dstate = tgi.xstate;
         reach = false;
     }
+    bool validMotion = tgi.start ?  si_->checkMotion(nmotion->state, dstate) :
+                       validState &&  si_->checkMotion(dstate, nmotion->state);
 
-    bool validMotion = tgi.start ? si_->checkMotion(nmotion->state, dstate) :
-                                   si_->isValid(dstate) && si_->checkMotion(dstate, nmotion->state);
+
 
     if (!validMotion)
         return TRAPPED;
@@ -187,7 +225,7 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
 {
     checkValidity();
     auto *goal = dynamic_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
-    OMPL_WARN("NewPlanner");
+    OMPL_WARN("NewPlanner1");
     if (goal == nullptr)
     {
         OMPL_ERROR("%s: Unknown type of goal", getName().c_str());
@@ -229,6 +267,16 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
     base::State *rstate = rmotion->state;
     bool startTree = true;
     bool solved = false;
+    unsigned int dim = si_->getStateDimension();
+    double ballVolumeUnit = calculateUnitBallVolume(dim);
+    assert(ballVolumeUnit > 0 && dim > 0);
+    double r = 2.2 * std::pow((1 + (1/dim)),(1/dim))*std::pow((1/ballVolumeUnit),(1/dim));
+
+//    std::thread slnThread([this, &ptc] { checkForNewMotion(ptc); });
+//
+//
+//    // Ensure slnThread is ceased before exiting solve
+//    slnThread.join();
 
     while (!ptc)
     {
@@ -256,7 +304,12 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
         }
 
         /* sample random state */
+        tgi.rejected = false;
+        tgi.sampleCount++;
         sampler_->sampleUniform(rstate);
+        OMPL_WARN("dimension %i , %f",si_->getStateDimension(),ballVolumeUnit);
+        tgi.quasiR = r * std::pow((std::log2f(tgi.sampleCount)/tgi.sampleCount),(1/dim));
+        OMPL_WARN("GROW tree %i , %f",si_->getStateDimension(),ballVolumeUnit);
 
         GrowState gs = growTree(tree, tgi, rmotion);
 
@@ -371,6 +424,10 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
         return base::PlannerStatus::APPROXIMATE_SOLUTION;
     }
 
+    for (auto *elem : *rejected_motions_)
+    {
+        std::cout<<"Elem" << (elem->state) <<std::endl; ;
+    }
     return solved ? base::PlannerStatus::EXACT_SOLUTION : base::PlannerStatus::TIMEOUT;
 }
 
@@ -412,4 +469,23 @@ void ompl::geometric::NewPlanner::getPlannerData(base::PlannerData &data) const
 
     // Add some info.
     data.properties["approx goal distance REAL"] = ompl::toString(distanceBetweenTrees_);
+}
+
+double ompl::geometric::NewPlanner::calculateUnitBallVolume(int dim)
+{
+    if (dim == 0)
+        return 1;
+    else if (dim == 1)
+        return 2;
+    return ((2 * M_PI)/dim)*calculateUnitBallVolume(dim-2);
+}
+
+void ompl::geometric::NewPlanner::checkForNewMotion(const base::PlannerTerminationCondition &ptc)
+{
+    auto *goal = static_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
+    while (!ptc)
+    {
+            OMPL_WARN("Second Thread");
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
 }
