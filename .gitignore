@@ -11,7 +11,7 @@ lib/
 py-bindings/ompl/app/
 py-bindings/ompl/bindings_generator.py
 !py-bindings/ompl/bindings_generator.py.in
-.idea
+.idea/
 cmake-build-debug/
 cmake-build-debug
 
