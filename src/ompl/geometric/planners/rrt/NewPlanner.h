@@ -138,6 +138,7 @@ namespace ompl
                 const base::State *root{nullptr};
                 base::State *state{nullptr};
                 Motion *parent{nullptr};
+                std::vector<Motion *> *child{nullptr};  // used in case of tRejected
             };
 
             /** \brief A nearest-neighbor datastructure representing a tree of motions */
@@ -150,7 +151,7 @@ namespace ompl
                 Motion *xmotion;
                 bool start;
                 bool rejected{false};
-                unsigned int sampleCount{0};
+                int sampleCount{1};
                 double quasiR{0};
             };
 
@@ -175,6 +176,9 @@ namespace ompl
             {
                 return si_->distance(a->state, b->state);
             }
+            void addToRejectedMotion(Motion *motion);
+            void addRejectedToTree(TreeData &tree ,Motion *nmotion,base::State *);
+
 
             /** \brief Grow a tree towards a random state */
             GrowState growTree(TreeData &tree, TreeGrowingInfo &tgi, Motion *rmotion);
@@ -188,7 +192,9 @@ namespace ompl
             /** \brief The goal tree */
             TreeData tGoal_;
 
-            std::vector<Motion*> *rejected_motions_;
+            TreeData  tRejected_;
+
+            std::vector<Motion *> *rejected_motions_;
 //            std::vector<Motion> *additional_motions_;
 
             /** \brief The maximum length of a motion to be added to a tree */
