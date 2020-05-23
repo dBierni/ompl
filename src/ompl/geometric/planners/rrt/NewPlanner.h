@@ -37,13 +37,15 @@
 #ifndef OMPL_GEOMETRIC_PLANNERS_RRT_NEW_PLANNER_
 #define OMPL_GEOMETRIC_PLANNERS_RRT_NEW_PLANNER_
 
-#include "ompl/datastructures/NearestNeighbors.h"
 #include "ompl/geometric/planners/PlannerIncludes.h"
+#include "ompl/base/OptimizationObjective.h"
+#include "ompl/datastructures/NearestNeighbors.h"
 
 namespace ompl
 {
     namespace geometric
     {
+
         /**
            @anchor gRRTC
            @par Short description
@@ -123,6 +125,20 @@ namespace ompl
             double calculateUnitBallVolume(int dim);
 
         protected:
+
+            struct CostIndexCompare
+            {
+                CostIndexCompare(const std::vector<base::Cost> &costs, const base::OptimizationObjective &opt)
+                        : costs_(costs), opt_(opt)
+                {
+                }
+                bool operator()(unsigned i, unsigned j)
+                {
+                  return opt_.isCostBetterThan(costs_[i], costs_[j]);
+                }
+                const std::vector<base::Cost> &costs_;
+                const base::OptimizationObjective &opt_;
+            };
             /** \brief Representation of a motion */
             class Motion
             {
@@ -139,6 +155,8 @@ namespace ompl
                 base::State *state{nullptr};
                 Motion *parent{nullptr};
                 std::vector<Motion *> *child{nullptr};  // used in case of tRejected
+                base::Cost cost;
+
             };
 
             /** \brief A nearest-neighbor datastructure representing a tree of motions */
@@ -186,17 +204,23 @@ namespace ompl
             /** \brief State sampler */
             base::StateSamplerPtr sampler_;
 
+            CostIndexCompare *compareFn{nullptr};
+
             /** \brief The start tree */
             TreeData tStart_;
 
             /** \brief The goal tree */
             TreeData tGoal_;
-
+            //*CostIndexCompare *compareFn;
             TreeData  tRejected_;
+            base::OptimizationObjectivePtr  opt_{nullptr};
 
             std::vector<Motion *> *rejected_motions_;
+            std::vector<base::Cost> costs;
+            std::vector<base::Cost> incCosts;
+            std::vector<std::size_t> sortedCostIndices;
 //            std::vector<Motion> *additional_motions_;
-
+            /** \brief Objective we're optimizing */
             /** \brief The maximum length of a motion to be added to a tree */
             double maxDistance_{0.};
 

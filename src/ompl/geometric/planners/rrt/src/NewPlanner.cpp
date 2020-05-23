@@ -40,6 +40,9 @@
 #include "ompl/util/String.h"
 #include <math.h>
 #include <thread>
+#include "ompl/base/objectives/PathLengthOptimizationObjective.h"
+#include "ompl/util/GeometricEquations.h"
+
 
 ompl::geometric::NewPlanner::NewPlanner(const base::SpaceInformationPtr &si, bool addIntermediateStates)
     : base::Planner(si, addIntermediateStates ? "NewPlannerIntermediate" : "NewPlanner")
@@ -55,6 +58,8 @@ ompl::geometric::NewPlanner::NewPlanner(const base::SpaceInformationPtr &si, boo
     distanceBetweenTrees_ = std::numeric_limits<double>::infinity();
     addIntermediateStates_ = addIntermediateStates;
     rejected_motions_ = new std::vector<Motion*>();
+
+
 //    additional_motions_ = new std::vector<Motion>();
 }
 
@@ -80,10 +85,13 @@ void ompl::geometric::NewPlanner::setup()
     if (!rejected_motions_)
       rejected_motions_ = new std::vector<Motion*>();
 
+//    if(!compareFn)
+//      compareFn = new CostIndexCompare(costs, *opt_);
 
-  tStart_->setDistanceFunction([this](const Motion *a, const Motion *b) { return distanceFunction(a, b); });
+    tStart_->setDistanceFunction([this](const Motion *a, const Motion *b) { return distanceFunction(a, b); });
     tGoal_->setDistanceFunction([this](const Motion *a, const Motion *b) { return distanceFunction(a, b); });
     tRejected_->setDistanceFunction([this](const Motion *a, const Motion *b) { return distanceFunction(a, b); });
+
 }
 
 void ompl::geometric::NewPlanner::freeMemory()
@@ -120,7 +128,6 @@ void ompl::geometric::NewPlanner::freeMemory()
     }
 }
 
-
 void ompl::geometric::NewPlanner::clear()
 {
     Planner::clear();
@@ -140,6 +147,9 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
                                                                              Motion *rmotion)
 {
   std::vector<Motion*> nearestMotions; // = new std::vector<Motion*>();
+  costs.clear();
+  incCosts.clear();
+  sortedCostIndices.clear();
 
     /* find closest state in the tree */
 //    Motion *nmotion = tree->nearest(rmotion);
@@ -182,86 +192,95 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
     }
     else
     {
-    double dist = std::numeric_limits<double>::max();
-    Motion *nmotion{nullptr};
-    for (auto iter = nearestMotions.begin(); iter != nearestMotions.end(); )
-    {
-      OMPL_WARN("TU");
-      double dist_between_states = si_->distance((*iter)->state, dstate);
-      bool validState = si_->isValid(dstate);
-      bool validMotion = tgi.start ? si_->checkMotion((*iter)->state, dstate) :
-                         validState && si_->checkMotion(dstate, (*iter)->state);
-      if (dist_between_states < dist && validMotion)
+      Motion *nmotion = nullptr;
+      costs.resize(nearestMotions.size());
+      incCosts.resize(nearestMotions.size());
+      sortedCostIndices.resize(nearestMotions.size());
+      CostIndexCompare compare(costs, *opt_);
+
+      bool validMotion = false;
+      for (std::size_t i = 0; i < nearestMotions.size(); ++i)
       {
-        dist = dist_between_states;
-        nmotion = (*iter);
+        incCosts[i] =  pdef_->getOptimizationObjective()->motionCost(nearestMotions[i]->state, dstate);
+        costs[i] =  pdef_->getOptimizationObjective()->combineCosts(nearestMotions[i]->cost, incCosts[i]);
       }
-      if (!validMotion)
+      for (std::size_t i = 0; i < nearestMotions.size(); ++i)
+        sortedCostIndices[i] = i;
+
+
+      std::sort(sortedCostIndices.begin(), sortedCostIndices.end(), *(compareFn));
+
+      for (std::vector<std::size_t>::const_iterator i = sortedCostIndices.begin();
+           i != sortedCostIndices.end(); ++i)
       {
-        if (validState)
-          OMPL_INFORM("VALID");
-        else {
-          iter = nearestMotions.erase(iter);
-          continue;
-        }
-      }
-      ++iter;
-    }
+        validMotion = tgi.start ? si_->checkMotion(nearestMotions[*i]->state, dstate) :
+                        validState && si_->checkMotion(dstate, nearestMotions[*i]->state);
 
-
-//    std::cout <<"size: " << nearestMotions.size() << " Radius: "<< tgi.quasiR << std::endl;
-      /* assume we can reach the state we go towards */
-      if (!nmotion)
-        return TRAPPED;
-      /* find state to add */
-      double d = si_->distance(nmotion->state, rmotion->state);
-      if (d > maxDistance_) {
-        si_->getStateSpace()->interpolate(nmotion->state, rmotion->state, maxDistance_ / d, tgi.xstate);
-
-        /* Check if we have moved at all. Due to some stranger state spaces (e.g., the constrained state spaces),
-         * interpolate can fail and no progress is made. Without this check, the algorithm gets stuck in a loop as it
-         * thinks it is making progress, when none is actually occurring. */
-        if (si_->equalStates(nmotion->state, tgi.xstate))
-          return TRAPPED;
-
-        dstate = tgi.xstate;
-        reach = false;
-      }
-
-
-
-      if (addIntermediateStates_) {
-        const base::State *astate = tgi.start ? nmotion->state : dstate;
-        const base::State *bstate = tgi.start ? dstate : nmotion->state;
-
-        std::vector<base::State *> states;
-        const unsigned int count = si_->getStateSpace()->validSegmentCount(astate, bstate);
-
-        if (si_->getMotionStates(astate, bstate, states, count, true, true))
-          si_->freeState(states[0]);
-
-        for (std::size_t i = 1; i < states.size(); ++i) {
-          auto *motion = new Motion;
-          motion->state = states[i];
-          motion->parent = nmotion;
-          motion->root = nmotion->root;
+        if (validMotion)
+        {
+          auto *motion = new Motion(si_);
+          si_->copyState(motion->state, dstate);
+          motion->parent = nearestMotions[*i];
+          motion->root = nearestMotions[*i]->root;
+          motion->cost = nearestMotions[*i]->cost;
           tree->add(motion);
 
-          nmotion = motion;
+          tgi.xmotion = motion;
+          break;
         }
-
-        tgi.xmotion = nmotion;
-      } else {
-        auto *motion = new Motion(si_);
-        si_->copyState(motion->state, dstate);
-        motion->parent = nmotion;
-        motion->root = nmotion->root;
-        tree->add(motion);
-
-        tgi.xmotion = motion;
       }
-    }
 
+
+      /* assume we can reach the state we go towards */
+      if (!validMotion)
+        return TRAPPED;
+      /* find state to add */
+//      double d = si_->distance(nmotion->state, rmotion->state);
+//      if (d > maxDistance_) {
+//        si_->getStateSpace()->interpolate(nmotion->state, rmotion->state, maxDistance_ / d, tgi.xstate);
+//
+//        /* Check if we have moved at all. Due to some stranger state spaces (e.g., the constrained state spaces),
+//         * interpolate can fail and no progress is made. Without this check, the algorithm gets stuck in a loop as it
+//         * thinks it is making progress, when none is actually occurring. */
+//        if (si_->equalStates(nmotion->state, tgi.xstate))
+//          return TRAPPED;
+//
+//        dstate = tgi.xstate;
+//        reach = false;
+//      }
+//
+//      if (addIntermediateStates_) {
+//        const base::State *astate = tgi.start ? nmotion->state : dstate;
+//        const base::State *bstate = tgi.start ? dstate : nmotion->state;
+//
+//        std::vector<base::State *> states;
+//        const unsigned int count = si_->getStateSpace()->validSegmentCount(astate, bstate);
+//
+//        if (si_->getMotionStates(astate, bstate, states, count, true, true))
+//          si_->freeState(states[0]);
+//
+//        for (std::size_t i = 1; i < states.size(); ++i) {
+//          auto *motion = new Motion;
+//          motion->state = states[i];
+//          motion->parent = nmotion;
+//          motion->root = nmotion->root;
+//          tree->add(motion);
+//          nmotion = motion;
+//        }
+//
+//        tgi.xmotion = nmotion;
+//      }
+//      else {
+//        auto *motion = new Motion(si_);
+//        si_->copyState(motion->state, dstate);
+//        motion->parent = nmotion;
+//        motion->root = nmotion->root;
+//        motion->cost = nmotion->cost;
+//        tree->add(motion);
+//
+//        tgi.xmotion = motion;
+//      }
+    }
     return reach ? REACHED : ADVANCED;
 }
 
@@ -269,7 +288,21 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
 {
     checkValidity();
     auto *goal = dynamic_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
-    OMPL_WARN("NewPlanner1");
+
+/**** TODO Move it to Setup */
+    if (pdef_->hasOptimizationObjective())
+        opt_ = pdef_->getOptimizationObjective();
+    else
+    {
+      OMPL_INFORM("%s: No optimization objective specified. Defaulting to optimizing path length for the allowed "
+                  "planning time.",
+                  getName().c_str());
+        opt_ = std::make_shared<base::PathLengthOptimizationObjective>(si_);
+        pdef_->setOptimizationObjective(opt_);
+    }
+    if(!compareFn)
+    compareFn = new CostIndexCompare(costs, *opt_);
+/****/
     if (goal == nullptr)
     {
         OMPL_ERROR("%s: Unknown type of goal", getName().c_str());
@@ -281,6 +314,7 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
         auto *motion = new Motion(si_);
         si_->copyState(motion->state, st);
         motion->root = motion->state;
+//        motion->cost = opt_;
         tStart_->add(motion);
     }
 
@@ -365,7 +399,7 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
           //check connection z RRT*
 
         }
-
+        OMPL_INFORM("CZy TU?");
         if (gs != TRAPPED && gs!= REJECTED)
         {
             /* remember which motion was just added */
