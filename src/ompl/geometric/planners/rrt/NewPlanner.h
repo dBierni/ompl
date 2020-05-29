@@ -204,7 +204,8 @@ namespace ompl
             /** \brief State sampler */
             base::StateSamplerPtr sampler_;
 
-            CostIndexCompare *compareFn{nullptr};
+//            CostIndexCompare *compareFn{nullptr};
+            std::unique_ptr<CostIndexCompare> compareFn;
 
             /** \brief The start tree */
             TreeData tStart_;
@@ -217,8 +218,8 @@ namespace ompl
 
             std::vector<Motion *> *rejected_motions_;
             std::vector<base::Cost> costs;
-            std::vector<base::Cost> incCosts;
-            std::vector<std::size_t> sortedCostIndices;
+//            std::vector<base::Cost> *incCosts;
+//            std::vector<std::size_t> *sortedCostIndices;
 //            std::vector<Motion> *additional_motions_;
             /** \brief Objective we're optimizing */
             /** \brief The maximum length of a motion to be added to a tree */
