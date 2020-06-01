@@ -150,41 +150,24 @@ void ompl::geometric::NewPlanner::clear()
 ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(TreeData &tree, TreeGrowingInfo &tgi,
                                                                              Motion *rmotion)
 {
-  std::vector<Motion*> nearestMotions; // = new std::vector<Motion*>();
-  std::vector<base::Cost> incCosts;
-  std::vector<std::size_t> sortedCostIndices;
-  std::size_t removeIndex{0};
-  base::Cost sampleCost;
-  Motion *nmotion = nullptr;
+    std::vector<Motion*> nearestMotions; // = new std::vector<Motion*>();
+    std::vector<base::Cost> incCosts;
+    std::vector<std::size_t> sortedCostIndices;
+    std::size_t removeIndex{0};
+    base::Cost sampleCost;
+    Motion *nmotion = nullptr;
 
-    /* find closest state in the tree */
-//    Motion *nmotion = tree->nearest(rmotion);
-
-//    if(!rejected_motions_->empty()){
-//      for (auto rejected_motion : *rejected_motions_)
-//      {
-//       tree->nearestR(rmotion, tgi.quasiR, nearestMotions);
-//
-//      }
-//      nearestMotions.clear();
-//    }
+    std::unique_lock<std::mutex> lck(mtx_tree_);
     tree->nearestR(rmotion, tgi.quasiR, nearestMotions);
-//  OMPL_WARN("Size %i, radius %f, max_distance: %f", nearestMotions.size(), tgi.quasiR, maxDistance_);
-
-//    if (nearestMotions.empty()) {
-////      tRejected_->nearestR(rmotion, tgi.quasiR, nearestMotions);
-//      rejected_motions_->push_back(rmotion);
-//      nearestMotions.clear();
-//      return REJECTED;
-//    }
+    lck.unlock();
 
     base::State *dstate = rmotion->state;
     bool validState = si_->isValid(dstate);
     bool reach = true;
-
     if (nearestMotions.empty())
     {
-        if (validState) {
+
+      if (validState) {
           if (tgi.rejected) {
             addToRejectedMotion(dstate);
           } else { // State is rejected if it is not connected either to start and goal tree
@@ -197,8 +180,11 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
     {
       costs.clear();
       costs.resize(nearestMotions.size());
+//      costs.shrink_to_fit();
       incCosts.resize(nearestMotions.size());
+//      incCosts.shrink_to_fit();
       sortedCostIndices.resize(nearestMotions.size());
+//      sortedCostIndices.shrink_to_fit();
 //      CostIndexCompare compare(costs, *opt_);
       bool validMotion = false;
       for (std::size_t i = 0; i < nearestMotions.size(); ++i)
@@ -209,11 +195,12 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
       for (std::size_t i = 0; i < nearestMotions.size(); ++i)
         sortedCostIndices[i] = i;
 
+
       std::sort(sortedCostIndices.begin(), sortedCostIndices.end(), *(compareFn));
 
 
       for (std::vector<std::size_t>::const_iterator i = sortedCostIndices.begin();
-           i != sortedCostIndices.end(); )
+           i != sortedCostIndices.end(); i++)
       {
         validMotion = tgi.start ? si_->checkMotion(nearestMotions[*i]->state, dstate) :
                         validState && si_->checkMotion(dstate, nearestMotions[*i]->state);
@@ -232,7 +219,7 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
           nmotion = motion;
           break;
         }
-        ++i;
+
       }
 
       sortedCostIndices.erase(sortedCostIndices.begin(),sortedCostIndices.begin()+removeIndex);
@@ -316,6 +303,8 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
 //        tgi.xmotion = motion;
 //      }
     }
+    nearestMotions.clear();
+//    nearestMotions.shrink_to_fit();
     return reach ? REACHED : ADVANCED;
 }
 
@@ -383,20 +372,20 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
     double dim = static_cast<double>(si_->getStateDimension());
     double ballVolumeUnit = calculateUnitBallVolume(dim);
     assert(ballVolumeUnit > 0 && dim > 0);
+//    double gammaval = (0.75*maxDistance_)* 2.0 * powf((1.0 + (1.0/dim)),(1.0/dim)) * powf((1.0/ballVolumeUnit),(1.0/dim));
     double gammaval = (0.75*maxDistance_)* 2.0 * powf((1.0 + (1.0/dim)),(1.0/dim)) * powf((1.0/ballVolumeUnit),(1.0/dim));
 
-  OMPL_WARN("Gamma: %f , r: %f  ", gammaval, tgi.quasiR);
     std::vector<Motion*> reuse_motions_ ;
     std::promise<void> exitSignal;
     std::future<void> futureObj = exitSignal.get_future();
     std::thread th(&NewPlanner::checkForNewMotion, this, std::move(futureObj), &reuse_motions_);
+
+    int iterration = 0;
 //
-//
-//    // Ensure slnThread is ceased before exiting solve
-//    slnThread.join();
 
     while (!ptc)
     {
+
         TreeData &tree = startTree ? tStart_ : tGoal_;
         tgi.start = startTree;
         startTree = !startTree;
@@ -420,25 +409,34 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
                 break;
             }
         }
-
         /* sample random state */
         tgi.rejected = false;
-        sampler_->sampleUniform(rstate);
-        tgi.quasiR = gammaval * powf((std::log(tgi.sampleCount)/tgi.sampleCount),(1.0/dim));
-        OMPL_WARN("START PETLI");
+        if (iterration < 10)
+          sampler_->sampleUniform(rstate);
+        else
+        {
+          if (!reuse_motions_.empty())
+          {
+            {
+//              std::unique_lock<std::mutex> lck_r(mtx_rejected_);
+              si_->copyState(rstate, reuse_motions_[0]->state);
+              delete *reuse_motions_.begin();
+              reuse_motions_.erase(reuse_motions_.begin());
+//              lck_r.unlock();
+            }
+          }else
+            sampler_->sampleUniform(rstate);
+
+          iterration = 0;
+        }
+      iterration++;
+
+
+      tgi.quasiR = gammaval * powf((std::log(tgi.sampleCount)/tgi.sampleCount),(1.0/dim));
+      OMPL_WARN("R : %f", tgi.quasiR);
+//      tgi.quasiR = gammaval * powf(tgi.sampleCount,(-1.0/dim));
         GrowState gs = growTree(tree, tgi, rmotion);
-//      if (gs == REJECTED)
-//        {
-//          GrowState gsc = ADVANCED;
-//          tgi.start = startTree;
-//          while (gsc == ADVANCED)
-//            gsc = growTree(otherTree, tgi, rmotion);
-//
-//          if(gsc == REJECTED)
-//            continue;
-//          //check connection z RRT*
-//
-//        }
+
 //        if (gs != TRAPPED)
 //        {
             /* remember which motion was just added */
@@ -449,26 +447,20 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
             /* if reached, it means we used rstate directly, no need to copy again */
             if (gs != REACHED)
                 si_->copyState(rstate, tgi.xstate);
+            if (gs == REACHED)
+              tgi.sampleCount++;
 
             GrowState gsc = ADVANCED;
             tgi.start = startTree;
-            while (gsc == ADVANCED)
-            {
-              OMPL_WARN("Drugie drzewo");
+            gsc = growTree(otherTree, tgi, rmotion);
 
-              gsc = growTree(otherTree, tgi, rmotion);
-              tgi.rejected = false;
-            }
 
           if(gsc == REJECTED || gs == REJECTED || gs == TRAPPED)
           {
-            OMPL_INFORM("Continue");
             continue;
-
           }
 
             tgi.sampleCount++;
-            OMPL_INFORM("SPRAWDZEBUE Polaczenia");
             /* update distance between trees */
             const double newDist = tree->getDistanceFunction()(addedMotion, otherTree->nearest(addedMotion));
             if (newDist < distanceBetweenTrees_)
@@ -486,6 +478,7 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
                 // it must be the case that either the start tree or the goal tree has made some progress
                 // so one of the parents is not nullptr. We go one step 'back' to avoid having a duplicate state
                 // on the solution path
+
               if (startMotion->parent != nullptr)
                     startMotion = startMotion->parent;
                 else
@@ -537,44 +530,6 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
                     }
                 }
             }
-
-        // check if can add any motion to trees
-//        for (auto)
-
-//      for( auto elem : *rejected_motions_)
-//      {
-//        bool first = true;
-//        for (auto elem_2: *rejected_motions_)
-//        {
-//          if (elem != elem_2){
-//            double dist = si_->distance(elem, elem_2);
-////            if (first){
-////              first = false;
-////              auto *motion = new Motion(si_);
-////              si_->copyState(motion->state, elem);
-//////              motion->root = nmotion->root;
-////              tRejected_->add(motion);
-////            }
-//            if (dist < tgi.quasiR)
-//            {
-//              auto *motion = new Motion(si_);
-//              si_->copyState(motion->state, dstate);
-//              motion->parent = elem;
-////              motion->root = nmotion->root;
-//              tRejected_->add(motion);
-//
-//            }
-//          }
-//
-//        }
-////        double dist = si_->distance(elem->state, rmotion->state);
-////        auto *motion = new Motion(si_);
-////        si_->copyState(motion->state, dstate);
-////        motion->parent = elem;
-//////              motion->root = nmotion->root;
-////        tree->add(motion);
-//
-//      }
     }
 
     si_->freeState(tgi.xstate);
@@ -584,6 +539,7 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
     th.join();
     OMPL_INFORM("%s: Created %u states (%u start + %u goal)", getName().c_str(), tStart_->size() + tGoal_->size(),
                 tStart_->size(), tGoal_->size());
+  OMPL_WARN("Size of rejected samples: ( %i )", rejected_motions_->size());
 
     if (approxsol && !solved)
     {
@@ -599,15 +555,14 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
         for (int i = mpath.size() - 1; i >= 0; --i)
             path->append(mpath[i]->state);
         pdef_->addSolutionPath(path, true, approxdif, getName());
-        return base::PlannerStatus::APPROXIMATE_SOLUTION;
+      return base::PlannerStatus::APPROXIMATE_SOLUTION;
     }
 
-//    for (auto *elem : *rejected_states_)
-//    {
-//        std::cout<<"Elem" << (elem->state) <<std::endl; ;
-//    }
+    for (auto &motion : reuse_motions_)
+    {
+       delete motion; ;
+    }
 
-    OMPL_WARN("Size of rejected samples: ( %i )", rejected_motions_->size());
     return solved ? base::PlannerStatus::EXACT_SOLUTION : base::PlannerStatus::TIMEOUT;
 }
 
@@ -660,28 +615,61 @@ double ompl::geometric::NewPlanner::calculateUnitBallVolume(int dim)
     return ((2 * M_PI)/dim)*calculateUnitBallVolume(dim-2);
 }
 
-void ompl::geometric::NewPlanner::checkForNewMotion(std::future<void> futureObj,std::vector<Motion*> * reuseMotions)
-{
+void ompl::geometric::NewPlanner::checkForNewMotion(std::future<void> futureObj,std::vector<Motion*> * reuseMotions) {
 
-  std::vector<Motion*> sRejected;
-  std::vector<Motion*> gRejected;
-  while (futureObj.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout)
-  {
-    std::cout << "Doing Some Work" << std::endl;
-    if (!rejected_motions_->empty())
-    {
-      for (const std::vector<Motion*>::iterator iter = rejected_motions_->begin(); iter!= rejected_motions_->end();)
-      {
+//  std::vector<Motion*> sRejected;
+//  std::vector<Motion*> gRejected;
+  std::vector<Motion *> local_rejected_;
+  bool connectionPoint = false;
 
-        tGoal_->nearestR(*iter,5, gRejected);
-        tGoal_->nearestR(*iter,5, sRejected);
+  std::size_t rMotionSize = 0;
+  while (futureObj.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout) {
 
+
+    if (!rejected_motions_->empty()) {
+      rMotionSize = rejected_motions_->size();
+      for (std::size_t index = 0; index < rMotionSize; index++) {
+////        tGoal_->nearestR(*iter,tgi.quasiR, gRejected); // tgi.QuasiR data race - any way there will be one more time checked in main thread
+////        tGoal_->nearestR(*iter,tgi.quasiR, sRejected);
+        std::unique_lock<std::mutex> lck(mtx_tree_);
+        Motion *gRejected = tGoal_->nearest((*rejected_motions_)[index]);
+        Motion *sRejected = tStart_->nearest((*rejected_motions_)[index]);
+        lck.unlock();
+        connectionPoint = false;
+        if (gRejected != nullptr) {
+          if (si_->distance(gRejected->state, (*rejected_motions_)[index]->state) < tgi.quasiR) {
+            if (si_->checkMotion(gRejected->state, (*rejected_motions_)[0]->state)) {
+//              std::unique_lock<std::mutex> lck_r(mtx_rejected_);
+              reuseMotions->push_back(std::move((*rejected_motions_)[index]));
+              rejected_motions_->erase(rejected_motions_->begin() + index);
+              rMotionSize = rMotionSize - 1;
+              connectionPoint = true;
+//              lck_r.unlock();
+            }
+          }
+        }
+
+        if (sRejected != nullptr) {
+          if (si_->distance(sRejected->state, (*rejected_motions_)[index]->state) < tgi.quasiR) {
+            if (si_->checkMotion(sRejected->state, (*rejected_motions_)[0]->state)) {
+              if (!connectionPoint) {
+//                std::unique_lock<std::mutex> lck_r(mtx_rejected_);
+                reuseMotions->push_back(std::move((*rejected_motions_)[index]));
+                rejected_motions_->erase(rejected_motions_->begin() + index);
+                rMotionSize = rMotionSize - 1;
+//                lck_r.unlock();
+              } else
+                reuseMotions->insert(reuseMotions->begin(), std::move((*rejected_motions_)[index]));
+            }
+          }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
       }
-
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
   }
+  reuseMotions->clear();
+//  reuseMotions->shrink_to_fit();
 }
 
 void ompl::geometric::NewPlanner::addToRejectedMotion(base::State *state) {
@@ -701,11 +689,17 @@ void ompl::geometric::NewPlanner::addToRejectedMotion(base::State *state) {
 //    }
 //  }else
 //  {
+//    mtx.try_lock();
+//    std::unique_lock<std::mutex> lck_r(mtx_rejected_);
+
     auto *rejectedMotion = new Motion(si_);
     si_->copyState(rejectedMotion->state, state);
     rejectedMotion->cost = opt_->identityCost();
     rejected_motions_->push_back(rejectedMotion);
+//    lck_r.unlock();
+
+
+//  mtx.unlock();
 //  }
 
 }
-

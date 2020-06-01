@@ -207,6 +207,9 @@ namespace ompl
 
 //            CostIndexCompare *compareFn{nullptr};
             std::unique_ptr<CostIndexCompare> compareFn;
+            std::mutex mtx_tree_;
+            std::mutex mtx_rejected_;
+            std::condition_variable cv;
 
             /** \brief The start tree */
             TreeData tStart_;
@@ -219,7 +222,6 @@ namespace ompl
             TreeGrowingInfo tgi;
 
             std::vector<Motion *> *rejected_motions_;
-            std::vector<Motion *> *reuse_motions_;
             std::vector<base::Cost> costs;
 //            std::vector<base::Cost> *incCosts;
 //            std::vector<std::size_t> *sortedCostIndices;
