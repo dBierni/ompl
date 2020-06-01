@@ -186,9 +186,7 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
     {
         if (validState) {
           if (tgi.rejected) {
-            auto *rejected_motion = new Motion(si_);
-            si_->copyState(rejected_motion->state, dstate);
-            rejected_motions_->push_back(rejected_motion);
+            addToRejectedMotion(dstate);
           } else { // State is rejected if it is not connected either to start and goal tree
             tgi.rejected = true;
           }
@@ -261,7 +259,16 @@ ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::growTree(Tre
 
       /* assume we can reach the state we go towards */
       if (!validMotion)
+      {
+        if (validState) {
+          if (tgi.rejected) {
+            addToRejectedMotion(dstate);
+          } else { // State is rejected if it is not connected either to start and goal tree
+            tgi.rejected = true;
+          }
+        }
         return TRAPPED;
+      }
       /* find state to add */
 //      double d = si_->distance(nmotion->state, rmotion->state);
 //      if (d > maxDistance_) {
@@ -364,7 +371,7 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
     OMPL_INFORM("%s: Starting planning with %d states already in datastructure", getName().c_str(),
                 (int)(tStart_->size() + tGoal_->size()));
 
-    TreeGrowingInfo tgi;
+
     tgi.xstate = si_->allocState();
 
     Motion *approxsol = nullptr;
@@ -379,7 +386,10 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
     double gammaval = (0.75*maxDistance_)* 2.0 * powf((1.0 + (1.0/dim)),(1.0/dim)) * powf((1.0/ballVolumeUnit),(1.0/dim));
 
   OMPL_WARN("Gamma: %f , r: %f  ", gammaval, tgi.quasiR);
-//    std::thread slnThread([this, &ptc] { checkForNewMotion(ptc); });
+    std::vector<Motion*> reuse_motions_ ;
+    std::promise<void> exitSignal;
+    std::future<void> futureObj = exitSignal.get_future();
+    std::thread th(&NewPlanner::checkForNewMotion, this, std::move(futureObj), &reuse_motions_);
 //
 //
 //    // Ensure slnThread is ceased before exiting solve
@@ -413,10 +423,9 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
 
         /* sample random state */
         tgi.rejected = false;
-        tgi.sampleCount++;
         sampler_->sampleUniform(rstate);
         tgi.quasiR = gammaval * powf((std::log(tgi.sampleCount)/tgi.sampleCount),(1.0/dim));
-
+        OMPL_WARN("START PETLI");
         GrowState gs = growTree(tree, tgi, rmotion);
 //      if (gs == REJECTED)
 //        {
@@ -444,11 +453,22 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
             GrowState gsc = ADVANCED;
             tgi.start = startTree;
             while (gsc == ADVANCED)
-                gsc = growTree(otherTree, tgi, rmotion);
+            {
+              OMPL_WARN("Drugie drzewo");
+
+              gsc = growTree(otherTree, tgi, rmotion);
+              tgi.rejected = false;
+            }
 
           if(gsc == REJECTED || gs == REJECTED || gs == TRAPPED)
+          {
+            OMPL_INFORM("Continue");
             continue;
 
+          }
+
+            tgi.sampleCount++;
+            OMPL_INFORM("SPRAWDZEBUE Polaczenia");
             /* update distance between trees */
             const double newDist = tree->getDistanceFunction()(addedMotion, otherTree->nearest(addedMotion));
             if (newDist < distanceBetweenTrees_)
@@ -466,7 +486,7 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
                 // it must be the case that either the start tree or the goal tree has made some progress
                 // so one of the parents is not nullptr. We go one step 'back' to avoid having a duplicate state
                 // on the solution path
-                if (startMotion->parent != nullptr)
+              if (startMotion->parent != nullptr)
                     startMotion = startMotion->parent;
                 else
                     goalMotion = goalMotion->parent;
@@ -560,7 +580,8 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
     si_->freeState(tgi.xstate);
     si_->freeState(rstate);
     delete rmotion;
-
+    exitSignal.set_value();
+    th.join();
     OMPL_INFORM("%s: Created %u states (%u start + %u goal)", getName().c_str(), tStart_->size() + tGoal_->size(),
                 tStart_->size(), tGoal_->size());
 
@@ -585,7 +606,8 @@ ompl::base::PlannerStatus ompl::geometric::NewPlanner::solve(const base::Planner
 //    {
 //        std::cout<<"Elem" << (elem->state) <<std::endl; ;
 //    }
-//    OMPL_WARN("Size of rejected samples: ( %i )", rejected_motions_->size());
+
+    OMPL_WARN("Size of rejected samples: ( %i )", rejected_motions_->size());
     return solved ? base::PlannerStatus::EXACT_SOLUTION : base::PlannerStatus::TIMEOUT;
 }
 
@@ -638,195 +660,52 @@ double ompl::geometric::NewPlanner::calculateUnitBallVolume(int dim)
     return ((2 * M_PI)/dim)*calculateUnitBallVolume(dim-2);
 }
 
-void ompl::geometric::NewPlanner::checkForNewMotion(const base::PlannerTerminationCondition &ptc)
+void ompl::geometric::NewPlanner::checkForNewMotion(std::future<void> futureObj,std::vector<Motion*> * reuseMotions)
 {
-    auto *goal = static_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
-    while (!ptc)
+
+  std::vector<Motion*> sRejected;
+  std::vector<Motion*> gRejected;
+  while (futureObj.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout)
+  {
+    std::cout << "Doing Some Work" << std::endl;
+    if (!rejected_motions_->empty())
     {
-            OMPL_WARN("Second Thread");
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      for (const std::vector<Motion*>::iterator iter = rejected_motions_->begin(); iter!= rejected_motions_->end();)
+      {
+
+        tGoal_->nearestR(*iter,5, gRejected);
+        tGoal_->nearestR(*iter,5, sRejected);
+
+      }
+
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  }
 }
 
-void ompl::geometric::NewPlanner::addToRejectedMotion(Motion *motion)
-{
-  auto *rejectedMotion = new Motion(si_);
-  si_->copyState(rejectedMotion->state, motion->state);
-  tRejected_->add(rejectedMotion);
-}
+void ompl::geometric::NewPlanner::addToRejectedMotion(base::State *state) {
 
-//void ompl::geometric::NewPlanner::addRejectedToTree(TreeData &tree ,Motion *nmotion, base::State * state)
-//{
-//  auto *rejectedMotion = new Motion(si_);
-//  si_->copyState(rejectedMotion->state,state);
-//  rejectedMotion->parent = nmotion->parent;
-//  rejectedMotion->root = nmotion->root;
-//  rejectedMotion->child = nullptr;
-//  tree->add(rejectedMotion);
-//}
-//
-//      // Connect to the three
-//     Motion *child = rejected_motion;
-//     Motion *parents = treeMotion;
-//     while (parents != nullptr)
-//     {
-//       bool validState = si_->isValid(rejected_motion->state);
-//       bool validMotion = (validState && si_->checkMotion(rejected_motion->state, treeMotion->state));
-//       if(validMotion)
-//        addRejectedToTree(tree,parents, child->state);
-//       else
-//         break;
-//       parents = child;
-//       child = child->parent;
-//     }
-//     while()
-//     child = rejected_motion->child;
-//     parents =
-//     while (child != nullptr)
-//     {
-//       bool validState = si_->isValid(rejected_motion->state);
-//       bool validMotion = (validState && si_->checkMotion(rejected_motion->state, treeMotion->state));
-//       if(validMotion)
-//         addRejectedToTree(tree,parents, child->state);
-//       else
-//         break;
-//       parents = child;
-//       child = child->parent;
-//     }
-//
-//   }
-//      ompl::geometric::NewPlanner::GrowState ompl::geometric::NewPlanner::expandTree(TreeData &tree, TreeGrowingInfo &tgi)
-//      {
-//        std::vector<Motion*> nearestMotions; // = new std::vector<Motion*>();
-//        auto *treeMotion = new Motion(si_);
-//
-//        for (auto rejected_motion : *rejected_motions_)
-//        {
-//          tree->nearestR(rejected_motion, tgi.quasiR, nearestMotions);
-//          double dist = 0;
-//          for (auto &treeM : nearestMotions)
-//          {
-//            double dist_between_states = si_->distance(rejected_motion->state,treeM->state);
-//            if (dist_between_states > dist)
-//            {
-//              dist = dist_between_states;
-//              treeMotion = treeM;
-//            }
-//          }
-//          if(treeMotion)
-//            continue;
-//
-//
-//
-//    }
-//  /* find closest state in the tree */
-////    Motion *nmotion = tree->nearest(rmotion);
-//
-////    if(!rejected_motions_->empty()){
-////      for (auto rejected_motion : *rejected_motions_)
-////      {
-////       tree->nearestR(rmotion, tgi.quasiR, nearestMotions);
-////
-////      }
-////      nearestMotions.clear();
-////    }
-//  tree->nearestR(rmotion, tgi.quasiR, nearestMotions);
-//  OMPL_WARN("Size %i, radius %f", nearestMotions.size(), tgi.quasiR);
-//
-////    if (nearestMotions.empty()) {
-//////      tRejected_->nearestR(rmotion, tgi.quasiR, nearestMotions);
-////      rejected_motions_->push_back(rmotion);
-////      nearestMotions.clear();
-////      return REJECTED;
-////    }
-//
-//  base::State *dstate = rmotion->state;
-//  bool validState = si_->isValid(dstate);
-//  bool reach = true;
-//
-//  if (nearestMotions.empty())
+//  if (rejected_motions_->size() > 1)
 //  {
-//    if (validState) {
-//      if (tgi.rejected) {
-////            std::vector<Motion*>::iterator it = std::find(rejected_motions_->begin(), rejected_motions_->end(),
-////                    rmotion);
-//        OMPL_INFORM("rejecred");
-////            if(it == rejected_motions_->end())
-//        rejected_motions_->push_back(rmotion);
-//      } else { // State is rejected if it is not connected either to start and goal tree
-//        tgi.rejected = true;
-//      }
-//    }
-//    return REJECTED;
-//  }
-//  else
-//  {
+//    auto iter = std::find_if(rejected_motions_->begin(), rejected_motions_->end(),
+//                             [&](Motion * rMotion){return si_->equalStates(rMotion->state,state);});
 //
-//    Motion *nmotion = *nearestMotions.begin();
-////    std::cout <<"size: " << nearestMotions.size() << " Radius: "<< tgi.quasiR << std::endl;
-//    /* assume we can reach the state we go towards */
-//
-//    /* find state to add */
-//    double d = si_->distance(nmotion->state, rmotion->state);
-//    if (d > maxDistance_) {
-//      si_->getStateSpace()->interpolate(nmotion->state, rmotion->state, maxDistance_ / d, tgi.xstate);
-//
-//      /* Check if we have moved at all. Due to some stranger state spaces (e.g., the constrained state spaces),
-//       * interpolate can fail and no progress is made. Without this check, the algorithm gets stuck in a loop as it
-//       * thinks it is making progress, when none is actually occurring. */
-//      if (si_->equalStates(nmotion->state, tgi.xstate))
-//        return TRAPPED;
-//
-//      dstate = tgi.xstate;
-//      reach = false;
-//    }
-//    bool validState = si_->isValid(dstate);
-//    bool validMotion = tgi.start ? si_->checkMotion(nmotion->state, dstate) :
-//                       validState && si_->checkMotion(dstate, nmotion->state);
-//    if (!validMotion)
+//    if (iter == rejected_motions_->end())
 //    {
-////        if (validState) {
-////          if (tgi.rejected) {
-////            addToRejectedState(dstate);
-////          } else { // State is rejected if it is not connected either to start and goal tree
-////            tgi.rejected = true;
-////          }
-////        }
-//      return TRAPPED;
+//      OMPL_WARN("Rejected added");
+//      auto *rejectedMotion = new Motion(si_);
+//      si_->copyState(rejectedMotion->state, state);
+//      rejectedMotion->cost = opt_->identityCost();
+//      rejected_motions_->push_back(rejectedMotion);
 //    }
-//
-//
-//    if (addIntermediateStates_) {
-//      const base::State *astate = tgi.start ? nmotion->state : dstate;
-//      const base::State *bstate = tgi.start ? dstate : nmotion->state;
-//
-//      std::vector<base::State *> states;
-//      const unsigned int count = si_->getStateSpace()->validSegmentCount(astate, bstate);
-//
-//      if (si_->getMotionStates(astate, bstate, states, count, true, true))
-//        si_->freeState(states[0]);
-//
-//      for (std::size_t i = 1; i < states.size(); ++i) {
-//        auto *motion = new Motion;
-//        motion->state = states[i];
-//        motion->parent = nmotion;
-//        motion->root = nmotion->root;
-//        tree->add(motion);
-//
-//        nmotion = motion;
-//      }
-//
-//      tgi.xmotion = nmotion;
-//    } else {
-//      auto *motion = new Motion(si_);
-//      si_->copyState(motion->state, dstate);
-//      motion->parent = nmotion;
-//      motion->root = nmotion->root;
-//      tree->add(motion);
-//
-//      tgi.xmotion = motion;
-//    }
+//  }else
+//  {
+    auto *rejectedMotion = new Motion(si_);
+    si_->copyState(rejectedMotion->state, state);
+    rejectedMotion->cost = opt_->identityCost();
+    rejected_motions_->push_back(rejectedMotion);
 //  }
-//
-//  return reach ? REACHED : ADVANCED;
-//}
+
+}
+

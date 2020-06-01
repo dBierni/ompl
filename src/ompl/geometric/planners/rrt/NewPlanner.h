@@ -40,6 +40,7 @@
 #include "ompl/geometric/planners/PlannerIncludes.h"
 #include "ompl/base/OptimizationObjective.h"
 #include "ompl/datastructures/NearestNeighbors.h"
+#include <future>
 
 namespace ompl
 {
@@ -73,7 +74,6 @@ namespace ompl
             base::PlannerStatus solve(const base::PlannerTerminationCondition &ptc) override;
 
             void clear() override;
-            void checkForNewMotion(const base::PlannerTerminationCondition &ptc);
             void generateTree(const base::PlannerTerminationCondition &ptc);
 
 
@@ -169,7 +169,7 @@ namespace ompl
                 Motion *xmotion;
                 bool start;
                 bool rejected{false};
-                int sampleCount{1};
+                int sampleCount{2};
                 double quasiR{0};
             };
 
@@ -194,8 +194,9 @@ namespace ompl
             {
                 return si_->distance(a->state, b->state);
             }
-            void addToRejectedMotion(Motion *motion);
+            void addToRejectedMotion(base::State *);
             void addRejectedToTree(TreeData &tree ,Motion *nmotion,base::State *);
+            void checkForNewMotion(std::future<void> futureObj, std::vector<Motion*> *);
 
 
             /** \brief Grow a tree towards a random state */
@@ -215,8 +216,10 @@ namespace ompl
             //*CostIndexCompare *compareFn;
             TreeData  tRejected_;
             base::OptimizationObjectivePtr  opt_{nullptr};
+            TreeGrowingInfo tgi;
 
             std::vector<Motion *> *rejected_motions_;
+            std::vector<Motion *> *reuse_motions_;
             std::vector<base::Cost> costs;
 //            std::vector<base::Cost> *incCosts;
 //            std::vector<std::size_t> *sortedCostIndices;
