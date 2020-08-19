@@ -58,7 +58,9 @@
 #include "ompl/geometric/planners/rrt/RRT.h"
 #include "ompl/geometric/planners/rrt/RRTConnect.h"
 #include "ompl/geometric/planners/rrt/NewPlanner.h"
+#include "ompl/geometric/planners/prm/NewPlannertwo.h"
 #include "ompl/geometric/planners/rrt/RRTstar.h"
+#include "ompl/geometric/planners/rrt/RRTstarD.h"
 #include "ompl/geometric/planners/rrt/RRTXstatic.h"
 #include "ompl/geometric/planners/sbl/SBL.h"
 #include "ompl/geometric/planners/prm/SPARS.h"
@@ -410,6 +412,10 @@ void ompl::geometric::AnytimePathShortening::setPlanners(const std::string &plan
             planners_.push_back(std::make_shared<geometric::TRRT>(si_));
         else if (plannerName == "NewPlanner")
             planners_.push_back(std::make_shared<geometric::NewPlanner>(si_));
+        else if (plannerName == "NewPlannertwo")
+            planners_.push_back(std::make_shared<geometric::NewPlannertwo>(si_));
+        else if (plannerName == "RRTstarD")
+          planners_.push_back(std::make_shared<geometric::RRTstarD>(si_));
         else
             OMPL_ERROR("Unknown planner name: %s", plannerName.c_str());
 

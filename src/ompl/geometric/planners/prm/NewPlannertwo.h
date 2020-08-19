@@ -34,8 +34,8 @@
 
 /* Author: Ioan Sucan */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_NEW_PLANNER_
-#define OMPL_GEOMETRIC_PLANNERS_RRT_NEW_PLANNER_
+#ifndef OMPL_GEOMETRIC_PLANNERS_PRM_NEW_PLANNER_TWO_
+#define OMPL_GEOMETRIC_PLANNERS_PRM_NEW_PLANNER_TWO_
 
 #include "ompl/geometric/planners/PlannerIncludes.h"
 #include "ompl/base/OptimizationObjective.h"
@@ -61,13 +61,13 @@ namespace ompl
         */
 
         /** \brief RRT-Connect (NewPlanner) */
-        class NewPlanner : public base::Planner
+        class NewPlannertwo : public base::Planner
         {
         public:
             /** \brief Constructor */
-            NewPlanner(const base::SpaceInformationPtr &si, bool addIntermediateStates = false);
+            NewPlannertwo(const base::SpaceInformationPtr &si, bool addIntermediateStates = false);
 
-            ~NewPlanner() override;
+            ~NewPlannertwo() override;
 
             void getPlannerData(base::PlannerData &data) const override;
 
@@ -197,7 +197,7 @@ namespace ompl
             void addToRejectedMotion(base::State *);
             void addRejectedToTree(TreeData &tree ,Motion *nmotion,base::State *);
             void checkForNewMotion(std::future<void> futureObj, std::vector<Motion*> *);
-            bool rejectedReuse(std::vector<Motion*> *reuseMotions);
+
 
             /** \brief Grow a tree towards a random state */
             GrowState growTree(TreeData &tree, TreeGrowingInfo &tgi, Motion *rmotion);
